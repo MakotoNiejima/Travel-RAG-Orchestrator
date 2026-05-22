@@ -1,2 +1,40 @@
-# Travel-RAG-Orchestrator
-在长周期、多目的地的复杂行程规划中，传统搜索引擎无法有效整合碎片化的 POI（兴趣点）数据、实时天气与交通限行规则。用户往往需要耗费数十小时查阅攻略，且极易因为信息滞后导致行程冲突，该项目目前作为后端引擎接入了一个内测版旅行小程序。过去 30 天内，成功处理了 1.2 万次复杂行程生成请求，将单次行程规划的 API 响应时间控制在 8 秒以内。意图识别准确率达到 92%，每日稳定消耗约 200 万 Token，极大地验证了 RAG 架构在垂直领域的商业价值
+# 🌍 Travel-RAG-Orchestrator
+
+![Python](https://img.shields.io/badge/python-3.11%2B-blue)
+![Milvus](https://img.shields.io/badge/VectorDB-Milvus-orange)
+![uv](https://img.shields.io/badge/package_manager-uv-purple)
+
+> 一个专为复杂地理空间规划设计的高性能 RAG（检索增强生成）智能体引擎。通过混合检索与多模型协作，实现秒级的定制化旅行路线生成。
+
+## 🎯 核心架构
+
+本项目摒弃了传统的单链生成模式，采用**异步多智能体架构**：
+
+1. **Query Expansion (HyDE)**: 针对用户简短的自然语言输入，系统首先利用大模型生成假设性回答，以此构建高维度的查询向量，大幅解决 "Query-Document Mismatch" 问题。
+2. **Hybrid Retrieval (RRF)**: 底层依托 **Milvus** 向量数据库。系统并行发起 Dense Vector（语义）与 Sparse Vector（BM25/关键词）检索，最终通过 Reciprocal Rank Fusion (RRF) 算法合并打分，确保召回内容的精准度。
+3. **Async Orchestration**: 基于 `asyncio` 实现全异步 I/O 流水线，最大化提升多 Agent 并行调用的网络效率。
+
+## 📦 技术栈
+
+- **包管理与运行**: `uv` (极致的 Python 依赖解析与构建速度)
+- **并发框架**: `asyncio`, `FastAPI`
+- **向量基建**: `Milvus` (Standalone 模式)
+- **大模型生态**: Claude 3.5 (意图理解), DeepSeek (检索增强), Gemini 1.5 Pro (超长上下文编排)
+
+## 🚦 快速运行
+
+使用 `uv` 极速初始化环境：
+
+```bash
+# 1. 克隆项目
+git clone [https://github.com/yourusername/Travel-RAG-Orchestrator.git](https://github.com/yourusername/Travel-RAG-Orchestrator.git)
+
+# 2. 使用 uv 同步依赖
+uv sync
+
+# 3. 启动 Milvus 容器并初始化索引
+docker-compose up -d milvus
+python scripts/init_vector_store.py
+
+# 4. 运行 API 服务
+uv run uvicorn src.main:app --workers 4
